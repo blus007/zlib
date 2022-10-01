@@ -232,7 +232,26 @@ extern int ZEXPORT unzGoToFirstFile OF((unzFile file));
   return UNZ_OK if there is no problem
 */
 
+extern int ZEXPORT unzGoToFirstFile2 OF((unzFile file,
+                                      unz_file_info64 *pfile_info,
+                                      char *szFileName,
+                                      uLong fileNameBufferSize));
+/*
+  Set the current file of the zipfile to the first file.
+  return UNZ_OK if there is no problem
+*/
+
 extern int ZEXPORT unzGoToNextFile OF((unzFile file));
+/*
+  Set the current file of the zipfile to the next file.
+  return UNZ_OK if there is no problem
+  return UNZ_END_OF_LIST_OF_FILE if the actual file was the latest.
+*/
+
+extern int ZEXPORT unzGoToNextFile2 OF((unzFile file,
+                                      unz_file_info64 *pfile_info,
+                                      char *szFileName,
+                                      uLong fileNameBufferSize));
 /*
   Set the current file of the zipfile to the next file.
   return UNZ_OK if there is no problem

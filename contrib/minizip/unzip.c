@@ -1192,6 +1192,33 @@ extern int ZEXPORT unzGoToFirstFile (unzFile file)
 }
 
 /*
+  Set the current file of the zipfile to the first file.
+  return UNZ_OK if there is no problem
+*/
+extern int ZEXPORT unzGoToFirstFile2 (unzFile file,
+                                      unz_file_info64 *pfile_info,
+                                      char *szFileName,
+                                      uLong fileNameBufferSize)
+{
+    int err=UNZ_OK;
+    unz64_s* s;
+    if (file==NULL)
+        return UNZ_PARAMERROR;
+    s=(unz64_s*)file;
+    if (s->gi.number_entry == 0)
+        return UNZ_END_OF_LIST_OF_FILE;
+    s->pos_in_central_dir=s->offset_central_dir;
+    s->num_file=0;
+    err=unz64local_GetCurrentFileInfoInternal(file,&s->cur_file_info,
+                                             &s->cur_file_info_internal,
+                                             szFileName,fileNameBufferSize,NULL,0,NULL,0);
+    s->current_file_ok = (err == UNZ_OK);
+    if ((err == UNZ_OK) && (pfile_info != NULL))
+        memcpy(pfile_info, &s->cur_file_info, sizeof(unz_file_info64));
+    return err;
+}
+
+/*
   Set the current file of the zipfile to the next file.
   return UNZ_OK if there is no problem
   return UNZ_END_OF_LIST_OF_FILE if the actual file was the latest.
@@ -1217,6 +1244,40 @@ extern int ZEXPORT unzGoToNextFile (unzFile  file)
                                                &s->cur_file_info_internal,
                                                NULL,0,NULL,0,NULL,0);
     s->current_file_ok = (err == UNZ_OK);
+    return err;
+}
+
+/*
+  Set the current file of the zipfile to the next file.
+  return UNZ_OK if there is no problem
+  return UNZ_END_OF_LIST_OF_FILE if the actual file was the latest.
+*/
+extern int ZEXPORT unzGoToNextFile2 (unzFile file,
+                                      unz_file_info64 *pfile_info,
+                                      char *szFileName,
+                                      uLong fileNameBufferSize)
+{
+    unz64_s* s;
+    int err;
+
+    if (file==NULL)
+        return UNZ_PARAMERROR;
+    s=(unz64_s*)file;
+    if (!s->current_file_ok)
+        return UNZ_END_OF_LIST_OF_FILE;
+    if (s->gi.number_entry != 0xffff)    /* 2^16 files overflow hack */
+      if (s->num_file+1==s->gi.number_entry)
+        return UNZ_END_OF_LIST_OF_FILE;
+
+    s->pos_in_central_dir += SIZECENTRALDIRITEM + s->cur_file_info.size_filename +
+            s->cur_file_info.size_file_extra + s->cur_file_info.size_file_comment ;
+    s->num_file++;
+    err = unz64local_GetCurrentFileInfoInternal(file,&s->cur_file_info,
+                                               &s->cur_file_info_internal,
+                                               szFileName,fileNameBufferSize,NULL,0,NULL,0);
+    s->current_file_ok = (err == UNZ_OK);
+    if ((err == UNZ_OK) && (pfile_info != NULL))
+        memcpy(pfile_info, &s->cur_file_info, sizeof(unz_file_info64));
     return err;
 }
 
